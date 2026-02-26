@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>五年级英语单词学习</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .mode-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .mode-btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .mode-btn.active {
+            background: white;
+            color: #667eea;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .word-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+        
+        .word-display {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        .english-word {
+            font-size: 42px;
+            color: #333;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .phonetic {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .chinese-meaning {
+            font-size: 22px;
+            color: #667eea;
+            font-weight: 500;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: none;
+            background: #667eea;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .control-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .control-btn.recording {
+            background: #ff4757;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 71, 87, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
+        }
+        
+        .score-display {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .stars {
+            font-size: 28px;
+            color: #ffd700;
+            margin-bottom: 10px;
+        }
+        
+        .feedback {
+            font-size: 18px;
+            color: #333;
+        }
+        
+        .test-container {
+            display: none;
+        }
+        
+        .test-question {
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        
+        .answer-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .answer-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .voice-input-btn {
+            width: 100%;
+            padding: 15px;
+            background: #48dbfb;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .submit-btn:hover {
+            background: #5a6fd8;
+        }
+        
+        .result {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .result.correct {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .result.wrong {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .progress {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .nav-btn {
+            padding: 10px 25px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .nav-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .unit-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .unit-btn {
+            padding: 8px 15px;
+            background: #f1f2f6;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        
+        .unit-btn.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .voice-status {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>五年级英语单词学习</h1>
+            <p>外研社Join in版 五下英语</p>
+            <div class="mode-selector">
+                <button class="mode-btn active" onclick="switchMode('learn')">学习模式</button>
+                <button class="mode-btn" onclick="switchMode('test')">测试模式</button>
+            </div>
+        </div>
+        
+        <div class="content">
+            <!-- 单元选择 -->
+            <div class="unit-selector" id="unitSelector"></div>
+            
+            <!-- 学习模式 -->
+            <div id="learnMode">
+                <div class="word-card">
+                    <div class="word-display">
+                        <div class="english-word" id="currentWord">alphabet</div>
+                        <div class="phonetic" id="currentPhonetic">/ˈælfəbet/</div>
+                        <div class="chinese-meaning" id="currentMeaning">n.字母表</div>
+                    </div>
+                    
+                    <div class="controls">
+                        <button class="control-btn" onclick="playPronunciation()">🔊</button>
+                        <button class="control-btn" id="recordBtn" onclick="toggleRecording()">🎤</button>
+                        <button class="control-btn" onclick="repeatWord()">↻</button>
+                    </div>
+                    
+                    <div class="score-display">
+                        <div class="stars" id="scoreStars">★★★★★</div>
+                        <div class="feedback" id="feedback">点击麦克风开始跟读</div>
+                    </div>
+                    
+                    <div class="voice-status" id="voiceStatus">语音功能准备就绪</div>
+                </div>
+                
+                <div class="progress">
+                    <button class="nav-btn" onclick="prevWord()" id="prevBtn">上一个</button>
+                    <span id="progressText">单词 1/14</span>
+                    <button class="nav-btn" onclick="nextWord()" id="nextBtn">下一个</button>
+                </div>
+            </div>
+            
+            <!-- 测试模式 -->
+            <div class="test-container" id="testMode">
+                <div class="test-question" id="testQuestion"></div>
+                <input type="text" class="answer-input" id="answerInput" placeholder="请输入答案...">
+                <button class="voice-input-btn" onclick="startVoiceInput()">
+                    🎤 语音输入
+                </button>
+                <button class="submit-btn" onclick="checkAnswer()">提交答案</button>
+                
+                <div class="result" id="testResult"></div>
+                
+                <div class="progress">
+                    <button class="nav-btn" onclick="prevTest()" id="prevTestBtn">上一题</button>
+                    <span id="testProgress">题目 1/14</span>
+                    <button class="nav-btn" onclick="nextTest()" id="nextTestBtn">下一题</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 单词数据（从文档中提取）
+        const wordData = [
+            // Unit 1
+            { english: "alphabet", phonetic: "/ˈælfəbet/", chinese: "n.字母表" },
+            { english: "enjoy", phonetic: "/ɪnˈdʒɔɪ/", chinese: "v.享受……的乐趣" },
+            { english: "everyone", phonetic: "/ˈevriwʌn/", chinese: "pron.每个人" },
+            { english: "fun", phonetic: "/fʌn/", chinese: "n.乐趣" },
+            { english: "hey", phonetic: "/heɪ/", chinese: "int.嘿，喂" },
+            { english: "near", phonetic: "/nɪə(r)/", chinese: "adj.接近（地）" },
+            { english: "notebook", phonetic: "/ˈnəʊtbʊk/", chinese: "n.笔记本" },
+            { english: "ping-pong", phonetic: "/ˈpɪŋ pɒŋ/", chinese: "n.乒乓球" },
+            { english: "school", phonetic: "/skuːl/", chinese: "n.[在学校里]上课" },
+            { english: "shake hands", phonetic: "/ʃeɪk hændz/", chinese: "握手" },
+            { english: "until", phonetic: "/ənˈtɪl/", chinese: "conj./prep.直到……为止" },
+            
+            // Unit 2
+            { english: "ask", phonetic: "/ɑːsk/", chinese: "v.问" },
+            { english: "before", phonetic: "/bɪˈfɔː(r)/", chinese: "prep.在……以前" },
+            { english: "busy", phonetic: "/ˈbɪzi/", chinese: "adj.忙碌的" },
+            { english: "call", phonetic: "/kɔːl/", chinese: "v.（一次）通话" },
+            { english: "CD-ROM", phonetic: "/ˌsiː diː ˈrɒm/", chinese: "n.只读光盘" },
+            { english: "do shopping", phonetic: "/duː ˈʃɒpɪŋ/", chinese: "购物" },
+            { english: "excited", phonetic: "/ɪkˈsaɪtɪd/", chinese: "adj.兴奋的" },
+            { english: "get", phonetic: "/ɡet/", chinese: "v.收到，接到" },
+            { english: "important", phonetic: "/ɪmˈpɔːtnt/", chinese: "adj.重要的" },
+            { english: "mobile phone", phonetic: "/ˌməʊbaɪl ˈfəʊn/", chinese: "n.移动电话，手机" },
+            
+            // Unit 3
+            { english: "moment", phonetic: "/ˈməʊmənt/", chinese: "n.片刻" },
+            { english: "over there", phonetic: "/ˌəʊvə ˈðeə(r)/", chinese: "在那边，在那儿" },
+            { english: "phone box", phonetic: "/ˈfəʊn bɒks/", chinese: "n.电话亭" },
+            { english: "phone call", phonetic: "/ˈfəʊn kɔːl/", chinese: "n.电话" },
+            { english: "programme", phonetic: "/ˈprəʊɡræm/", chinese: "n.[电视或广播的]节目" },
+            { english: "see you tomorrow", phonetic: "/siː juː təˈmɒrəʊ/", chinese: "明天见" },
+            { english: "something", phonetic: "/ˈsʌmθɪŋ/", chinese: "pron.某物，某事" },
+            { english: "squirrel", phonetic: "/ˈskwɪrəl/", chinese: "n.松鼠" },
+            { english: "storybook", phonetic: "/ˈstɔːribʊk/", chinese: "n.故事书" },
+            { english: "wait a moment", phonetic: "/weɪt ə ˈməʊmənt/", chinese: "等一下" },
+            
+            // 更多单词...（实际使用时可以添加所有单词）
+        ];
+
+        // 学习模式状态
+        let currentMode = 'learn';
+        let currentWordIndex = 0;
+        let currentTestIndex = 0;
+        let testType = 'enToCn'; // 'enToCn' 或 'cnToEn'
+        let isRecording = false;
+        let recognition = null;
+
+        // 初始化
+        function init() {
+            // 初始化单元选择器
+            initUnitSelector();
+            
+            // 初始化语音识别（如果浏览器支持）
+            initSpeechRecognition();
+            
+            // 显示第一个单词
+            updateWordDisplay();
+            updateTestDisplay();
+        }
+
+        // 初始化单元选择器
+        function initUnitSelector() {
+            const unitSelector = document.getElementById('unitSelector');
+            const units = 14; // 根据文档有14个单元
+            
+            for (let i = 1; i <= units; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'unit-btn' + (i === 1 ? ' active' : '');
+                btn.textContent = `Unit ${i}`;
+                btn.onclick = () => selectUnit(i);
+                unitSelector.appendChild(btn);
+            }
+        }
+
+        // 选择单元
+        function selectUnit(unit) {
+            // 更新激活状态
+            document.querySelectorAll('.unit-btn').forEach((btn, index) => {
+                btn.classList.toggle('active', index + 1 === unit);
+            });
+            
+            // 这里可以按单元筛选单词，简化实现先显示所有单词
+            currentWordIndex = 0;
+            currentTestIndex = 0;
+            updateWordDisplay();
+            updateTestDisplay();
+        }
+
+        // 切换模式
+        function switchMode(mode) {
+            currentMode = mode;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.includes(mode === 'learn' ? '学习' : '测试'));
+            });
+            
+            // 显示/隐藏对应内容
+            document.getElementById('learnMode').style.display = mode === 'learn' ? 'block' : 'none';
+            document.getElementById('testMode').style.display = mode === 'test' ? 'block' : 'none';
+            
+            if (mode === 'test') {
+                // 随机选择测试类型
+                testType = Math.random() > 0.5 ? 'enToCn' : 'cnToEn';
+                updateTestDisplay();
+            }
+        }
+
+        // 更新单词显示
+        function updateWordDisplay() {
+            const word = wordData[currentWordIndex];
+            document.getElementById('currentWord').textContent = word.english;
+            document.getElementById('currentPhonetic').textContent = word.phonetic;
+            document.getElementById('currentMeaning').textContent = word.chinese;
+            document.getElementById('progressText').textContent = `单词 ${currentWordIndex + 1}/${wordData.length}`;
+            
+            // 更新按钮状态
+            document.getElementById('prevBtn').disabled = currentWordIndex === 0;
+            document.getElementById('nextBtn').disabled = currentWordIndex === wordData.length - 1;
+        }
+
+        // 播放发音
+        function playPronunciation() {
+            const word = wordData[currentWordIndex];
+            speakWord(word.english);
+            document.getElementById('feedback').textContent = "正在播放发音...";
+        }
+
+        // 文本转语音
+        function speakWord(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.8; // 稍慢的语速
+                speechSynthesis.speak(utterance);
+            } else {
+                alert("您的浏览器不支持语音合成功能");
+            }
+        }
+
+        // 重复单词
+        function repeatWord() {
+            playPronunciation();
+        }
+
+        // 初始化语音识别
+        function initSpeechRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.lang = 'en-US';
+                recognition.interimResults = false;
+                recognition.maxAlternatives = 1;
+                
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0].transcript;
+                    evaluatePronunciation(transcript);
+                };
+                
+                recognition.onerror = (event) => {
+                    console.error('语音识别错误:', event.error);
+                    document.getElementById('voiceStatus').textContent = "语音识别错误，请重试";
+                    stopRecording();
+                };
+                
+                recognition.onend = () => {
+                    stopRecording();
+                };
+            } else {
+                document.getElementById('voiceStatus').textContent = "您的浏览器不支持语音识别";
+            }
+        }
+
+        // 开始/停止录音
+        function toggleRecording() {
+            if (!recognition) {
+                alert("语音识别不可用");
+                return;
+            }
+            
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        }
+
+        // 开始录音
+        function startRecording() {
+            isRecording = true;
+            document.getElementById('recordBtn').classList.add('recording');
+            document.getElementById('recordBtn').textContent = "⏹️";
+            document.getElementById('feedback').textContent = "正在录音...请跟读单词";
+            recognition.start();
+        }
+
+        // 停止录音
+        function stopRecording() {
+            isRecording = false;
+            document.getElementById('recordBtn').classList.remove('recording');
+            document.getElementById('recordBtn').textContent = "🎤";
+        }
+
+        // 评估发音
+        function evaluatePronunciation(spokenText) {
+            const correctWord = wordData[currentWordIndex].english.toLowerCase();
+            const spokenWord = spokenText.toLowerCase();
+            
+            let score = 0;
+            let feedback = "";
+            
+            // 简单的评分逻辑（实际应用中应该更复杂）
+            if (spokenWord === correctWord) {
+                score = 5;
+                feedback = "太棒了！发音非常标准！";
+            } else if (spokenWord.includes(correctWord) || correctWord.includes(spokenWord)) {
+                score = 4;
+                feedback = "很好！发音基本正确！";
+            } else if (spokenWord.length === correctWord.length) {
+                score = 3;
+                feedback = "不错！再听一次标准发音试试？";
+            } else {
+                score = 2;
+                feedback = "加油！点击喇叭再听一次标准发音";
+            }
+            
+            // 显示评分
+            displayScore(score, feedback);
+        }
+
+        // 显示评分
+        function displayScore(score, feedback) {
+            const stars = document.getElementById('scoreStars');
+            stars.textContent = "★".repeat(score) + "☆".repeat(5 - score);
+            document.getElementById('feedback').textContent = feedback;
+            
+            // 播放鼓励语音
+            if (score >= 4) {
+                speakWord("Excellent!");
+            } else if (score >= 3) {
+                speakWord("Good job!");
+            } else {
+                speakWord("Try again!");
+            }
+        }
+
+        // 上一个单词
+        function prevWord() {
+            if (currentWordIndex > 0) {
+                currentWordIndex--;
+                updateWordDisplay();
+            }
+        }
+
+        // 下一个单词
+        function nextWord() {
+            if (currentWordIndex < wordData.length - 1) {
+                currentWordIndex++;
+                updateWordDisplay();
+            }
+        }
+
+        // 测试模式功能
+        function updateTestDisplay() {
+            const word = wordData[currentTestIndex];
+            const questionElement = document.getElementById('testQuestion');
+            const inputElement = document.getElementById('answerInput');
+            
+            if (testType === 'enToCn') {
+                questionElement.textContent = `单词 "${word.english}" 的中文意思是？`;
+                inputElement.placeholder = "请输入中文意思...";
+            } else {
+                questionElement.textContent = `中文 "${word.chinese}" 对应的英文单词是？`;
+                inputElement.placeholder = "请输入英文单词...";
+            }
+            
+            document.getElementById('testProgress').textContent = `题目 ${currentTestIndex + 1}/${wordData.length}`;
+            document.getElementById('testResult').style.display = 'none';
+            inputElement.value = '';
+            
+            // 更新按钮状态
+            document.getElementById('prevTestBtn').disabled = currentTestIndex === 0;
+            document.getElementById('nextTestBtn').disabled = currentTestIndex === wordData.length - 1;
+        }
+
+        // 开始语音输入
+        function startVoiceInput() {
+            if (!recognition) {
+                alert("语音识别不可用");
+                return;
+            }
+            
+            recognition.lang = testType === 'enToCn' ? 'zh-CN' : 'en-US';
+            recognition.start();
+            
+            document.getElementById('answerInput').placeholder = "正在聆听...";
+            
+            recognition.onresult = (event) => {
+                const transcript = event.results[0].transcript;
+                document.getElementById('answerInput').value = transcript;
+            };
+        }
+
+        // 检查答案
+        function checkAnswer() {
+            const userAnswer = document.getElementById('answerInput').value.trim();
+            const word = wordData[currentTestIndex];
+            const resultElement = document.getElementById('testResult');
+            
+            let isCorrect = false;
+            
+            if (testType === 'enToCn') {
+                // 检查中文意思（允许一定的灵活性）
+                isCorrect = userAnswer.includes(word.chinese.split('.')[1](@ref) || 
+                           word.chinese.includes(userAnswer);
+            } else {
+                // 检查英文单词（不区分大小写）
+                isCorrect = userAnswer.toLowerCase() === word.english.toLowerCase();
+            }
+            
+            if (isCorrect) {
+                resultElement.textContent = `✓ 正确！${word.english} - ${word.chinese}`;
+                resultElement.className = 'result correct';
+                speakWord("Correct!");
+            } else {
+                resultElement.textContent = `✗ 错误！正确答案：${word.english} - ${word.chinese}`;
+                resultElement.className = 'result wrong';
+                speakWord("Try again!");
+            }
+            
+            resultElement.style.display = 'block';
+        }
+
+        // 上一题
+        function prevTest() {
+            if (currentTestIndex > 0) {
+                currentTestIndex--;
+                updateTestDisplay();
+            }
+        }
+
+        // 下一题
+        function nextTest() {
+            if (currentTestIndex < wordData.length - 1) {
+                currentTestIndex++;
+                // 随机切换测试类型
+                testType = Math.random() > 0.5 ? 'enToCn' : 'cnToEn';
+                updateTestDisplay();
+            }
+        }
+
+        // 页面加载完成后初始化
+        window.onload = init;
+    </script>
+</body>
+</html>
