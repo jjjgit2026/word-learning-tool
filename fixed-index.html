@@ -97,6 +97,33 @@
             font-weight: 500;
         }
         
+        .example-sentence {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .sentence-label {
+            font-size: 14px;
+            color: #999;
+            margin-bottom: 10px;
+        }
+        
+        .sentence-english {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        
+        .sentence-chinese {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.5;
+        }
+        
         .controls {
             display: flex;
             justify-content: center;
@@ -310,7 +337,21 @@
             padding: 10px;
             border: 2px solid #ddd;
             border-radius: 8px;
-            background: white;
+            font-size: 14px;
+        }
+        
+        .file-select {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .file-select:focus {
+            outline: none;
+            border-color: #667eea;
         }
         
         .btn {
@@ -408,8 +449,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>五年级英语单词学习</h1>
-            <p>外研社Join in版 五下英语</p>
+            <h1>英语单词学习</h1>
+            <p>外研社Join in版字帖</p>
             <div class="mode-selector">
                 <button class="mode-btn active" onclick="switchMode('learn')">学习模式</button>
                 <button class="mode-btn" onclick="switchMode('test')">测试模式</button>
@@ -421,11 +462,13 @@
             <div class="upload-section" id="uploadSection">
                 <h3>📚 单词库管理</h3>
                 <div class="upload-controls">
-                    <input type="file" id="pdfUpload" accept=".pdf" class="file-input">
-                    <button class="btn upload-btn" onclick="handleFileUpload()">上传PDF文件</button>
+                    <select id="pdfSelect" class="file-select">
+                        <option value="">请选择PDF文件</option>
+                    </select>
+                    <button class="btn upload-btn" onclick="handlePDFSelect()">选择PDF文件</button>
                     <button class="btn clear-btn" onclick="clearWordLibrary()">清空单词库</button>
                 </div>
-                <div class="upload-status" id="uploadStatus">请上传PDF文件以加载单词库</div>
+                <div class="upload-status" id="uploadStatus">请选择PDF文件以加载单词库</div>
             </div>
             
             <!-- 页面选择区域 (默认隐藏，上传文件后显示) -->
@@ -442,6 +485,12 @@
                         <div class="english-word" id="currentWord">alphabet</div>
                         <div class="phonetic" id="currentPhonetic">/ˈælfəbet/</div>
                         <div class="chinese-meaning" id="currentMeaning">n.字母表</div>
+                    </div>
+                    
+                    <div class="example-sentence" id="exampleSentence">
+                        <div class="sentence-label">例句：</div>
+                        <div class="sentence-english" id="sentenceEnglish">It gave me sounds and the alphabet.</div>
+                        <div class="sentence-chinese" id="sentenceChinese">她教我发声和认识字母表。</div>
                     </div>
                     
                     <div class="controls">
@@ -468,10 +517,7 @@
             <!-- 测试模式 -->
             <div class="test-container" id="testMode">
                 <div class="test-question" id="testQuestion"></div>
-                <input type="text" class="answer-input" id="answerInput" placeholder="请输入答案...">
-                <button class="voice-input-btn" onclick="startVoiceInput()">
-                    🎤 语音输入
-                </button>
+                <input type="text" class="answer-input" id="answerInput" placeholder="请输入英文单词...">
                 <button class="submit-btn" onclick="checkAnswer()">提交答案</button>
                 
                 <div class="result" id="testResult"></div>
@@ -501,14 +547,732 @@
         let currentMode = 'learn';
         let currentWordIndex = 0;
         let currentTestIndex = 0;
-        let testType = 'enToCn';
+        let testType = 'cnToEn';
         let isRecording = false;
         let recognition = null;
+
+        // 例句数据库 - 外研社Join In版五年级下册
+        const exampleSentences = {
+            // Starter unit
+            'alphabet': {
+                english: 'It gave me sounds and the alphabet.',
+                chinese: '她教我发声和认识字母表。'
+            },
+            'enjoy': {
+                english: 'I enjoy reading books in my free time.',
+                chinese: '我喜欢在空闲时间读书。'
+            },
+            'everyone': {
+                english: 'Everyone in the world should care about the planet.',
+                chinese: '地球上的每个人都应该关心这颗星球。'
+            },
+            'fun': {
+                english: 'They are all having fun at the party.',
+                chinese: '他们在派对上玩得很开心。'
+            },
+            'head': {
+                english: 'My head hurts.',
+                chinese: '我的头受伤了。'
+            },
+            'near': {
+                english: 'The ball rolled so near the hole, it almost fell in.',
+                chinese: '这个球滚到离洞很近的地方，差一点就进了。'
+            },
+            'notebook': {
+                english: 'He copied the data into a notebook.',
+                chinese: '他将数据抄在一个笔记本上。'
+            },
+            'school': {
+                english: 'I am going to the school.',
+                chinese: '我要去学校。'
+            },
+            'shake hands': {
+                english: 'Many people pressed forward to shake hands with him.',
+                chinese: '很多人挤向前和他握手。'
+            },
+            'until': {
+                english: 'Let us wait until the rain stops.',
+                chinese: '咱们等雨停了吧。'
+            },
+            // Unit 1
+            'ask': {
+                english: 'I have got a few questions to ask.',
+                chinese: '我有一些问题要问。'
+            },
+            'before': {
+                english: 'There is only one person before me in line.',
+                chinese: '在队伍里我前面就只有一个人。'
+            },
+            'call': {
+                english: 'I made a phone call to the United States to talk to a friend.',
+                chinese: '我打电话给美国的一个朋友。'
+            },
+            'CD-ROM': {
+                english: 'The encyclopedia is available on CD-ROM.',
+                chinese: '百科全书光盘已上市。'
+            },
+            'do shopping': {
+                english: 'Sometimes I do shopping on line.',
+                chinese: '有时我在网上购物。'
+            },
+            'Easter': {
+                english: 'Happy Easter!',
+                chinese: '复活节快乐！'
+            },
+            'get': {
+                english: 'What grade are you hoping to get?',
+                chinese: '你希望得到什么样的成绩？'
+            },
+            'ill': {
+                english: 'She is ill and is taken care of by the doctor.',
+                chinese: '她生病了，医生在照看她。'
+            },
+            'mobile phone': {
+                english: 'My mobile phone is extremely useful.',
+                chinese: '我的手机非常有用。'
+            },
+            'moment': {
+                english: 'Could you wait a moment, please?',
+                chinese: '请您稍等一下，好吗？'
+            },
+            'over there': {
+                english: 'Look, there is a map over there.',
+                chinese: '看，那儿有一幅地图。'
+            },
+            'paint': {
+                english: 'This paint mixes easily with water.',
+                chinese: '这种颜料容易与水混合。'
+            },
+            'phone box': {
+                english: 'If you spy a phone box will you let me know.',
+                chinese: '如果你看见电话亭的话请告诉我。'
+            },
+            'phone call': {
+                english: 'I have to make a phone call.',
+                chinese: '我得打个电话。'
+            },
+            'programme': {
+                english: 'What is on the programme?',
+                chinese: '演出什么节目？'
+            },
+            'something': {
+                english: 'When I set my mind to something, I persist.',
+                chinese: '一旦我对某事拿定主意，我就会坚持到底。'
+            },
+            'squirrel': {
+                english: 'The squirrel makes a store of nuts for the winter.',
+                chinese: '松鼠贮藏坚果以备过冬。'
+            },
+            'storybook': {
+                english: 'Look, I have a new storybook.',
+                chinese: '看，我有一本新的故事书。'
+            },
+            'wait a moment': {
+                english: 'Please wait a moment.',
+                chinese: '请稍候一会儿。'
+            },
+            'website': {
+                english: 'Go to the website today and you can unsubscribe online.',
+                chinese: '今天上网就可以退订。'
+            },
+            'work': {
+                english: 'I love my job, so I work very hard.',
+                chinese: '我热爱我的工作，所以我工作很努力。'
+            },
+            'wrong': {
+                english: 'Something is wrong with my bike.',
+                chinese: '我的自行车有毛病了。'
+            },
+            // Unit 2
+            'Arctic': {
+                english: 'The explorer lectured on life in the Arctic.',
+                chinese: '那位探险家演讲北极的生活。'
+            },
+            'early': {
+                english: 'It is far too early in the morning to get up!',
+                chinese: '现在起床太早！'
+            },
+            'earth': {
+                english: 'We only have one earth, so we should do all we can to protect her.',
+                chinese: '我们只有一个地球，所以我们应该竭尽所能去保护她。'
+            },
+            'fishing': {
+                english: 'I am dead keen on fishing.',
+                chinese: '我酷爱钓鱼。'
+            },
+            'go fishing': {
+                english: 'They can go fishing in the lake.',
+                chinese: '他们可以在湖里钓鱼。'
+            },
+            'grandad': {
+                english: 'Where Are We Going, Grandad?',
+                chinese: '爷爷，我们去哪儿？'
+            },
+            'grandma': {
+                english: 'My grandma is friendly to everyone.',
+                chinese: '我外婆对每个人都很和善。'
+            },
+            'grandpa': {
+                english: 'Grandpa used to read me stories when I was a little girl.',
+                chinese: '在我小时候，爷爷会给我讲故事。'
+            },
+            'hare': {
+                english: 'The lion pounced on the hare.',
+                chinese: '狮子搏兔。'
+            },
+            'hill': {
+                english: 'This hill is hard to climb.',
+                chinese: '这山很难爬。'
+            },
+            'ice': {
+                english: 'The ice is melting.',
+                chinese: '冰正在融化。'
+            },
+            'lake': {
+                english: 'The lake is hidden among the mountains.',
+                chinese: '湖泊四周群山环绕。'
+            },
+            'North Pole': {
+                english: 'The north pole is slightly tipped towards the sun.',
+                chinese: '北极略微向太阳倾斜。'
+            },
+            'polar bear': {
+                english: 'I hung out with this polar bear.',
+                chinese: '我跟北极熊一起散步。'
+            },
+            'pull': {
+                english: 'Pull as hard as you can.',
+                chinese: '尽可能地用力拉。'
+            },
+            'seal': {
+                english: 'The first time I saw a seal was in an aquarium.',
+                chinese: '我第一次看见海豹是在水族馆里。'
+            },
+            'shopping mall': {
+                english: 'I will accompany you to the shopping mall.',
+                chinese: '我会陪伴你去购物中心。'
+            },
+            'snow': {
+                english: 'After the snow it is really cold.',
+                chinese: '下过这场雪，就觉出冷来了。'
+            },
+            'South Pole': {
+                english: 'They mapped the South Pole.',
+                chinese: '他们绘制了南极的地图。'
+            },
+            'will': {
+                english: 'You will do as I request, if you please.',
+                chinese: '请按我的要求做。'
+            },
+            // Unit 3
+            'detective': {
+                english: 'He buried himself in his detective story again.',
+                chinese: '他又沉浸在他的侦探故事里了。'
+            },
+            'different': {
+                english: 'The badges come in twenty different colours and shapes.',
+                chinese: '这种徽章有20种不同的颜色和形状。'
+            },
+            'interesting': {
+                english: 'The show is interesting. We all laugh.',
+                chinese: '这个节目很有趣，我们都笑了。'
+            },
+            'Kung Fu Panda': {
+                english: 'So are you sure now there is a sequel of Kung Fu Panda?',
+                chinese: '你确定《功夫熊猫》会有续集吗？'
+            },
+            'nature': {
+                english: 'This is nature in the raw.',
+                chinese: '这是自然的原生态。'
+            },
+            'only': {
+                english: 'He is the only one on the road.',
+                chinese: '他是路上唯一的行人。'
+            },
+            'romantic': {
+                english: 'This poem is typical of the Romantic period.',
+                chinese: '这首诗具有浪漫主义时期的特点。'
+            },
+            'science fiction': {
+                english: 'This is a satisfying science fiction.',
+                chinese: '这是部令人满意的科幻小说。'
+            },
+            'star': {
+                english: 'There are innumerable stars in the sky.',
+                chinese: '天空中有无数颗星。'
+            },
+            'sweet': {
+                english: 'Add more honey if you have a sweet tooth.',
+                chinese: '如果你喜欢吃甜的就多加点蜂蜜。'
+            },
+            'television': {
+                english: 'This is a color television.',
+                chinese: '这是一台彩色电视机。'
+            },
+            'telly': {
+                english: 'Is there anything good on telly?',
+                chinese: '电视上有好的节目吗？'
+            },
+            'thousand': {
+                english: 'This hall is big enough for a thousand people.',
+                chinese: '这个礼堂能盛一千人。'
+            },
+            'true': {
+                english: 'That is true.',
+                chinese: '确实是那样的。'
+            },
+            'usually': {
+                english: 'He usually works all through the night.',
+                chinese: '他经常通宵工作。'
+            },
+            'want': {
+                english: 'I want to find a job from the newspaper.',
+                chinese: '我想从报纸上找到一份工作。'
+            },
+            'while': {
+                english: 'They walked on in silence for a while.',
+                chinese: '他们默默地走了一会儿。'
+            },
+            // Unit 4
+            'ahead': {
+                english: 'The highway stretched out flat and straight ahead.',
+                chinese: '公路平坦而笔直地向前延伸。'
+            },
+            'beside': {
+                english: 'The loyal dog is lying beside her master.',
+                chinese: '这只忠诚的狗狗正趴在主人旁边。'
+            },
+            'bus stop': {
+                english: 'They waited at a bus stop.',
+                chinese: '他们在一个公共汽车站等车。'
+            },
+            'church': {
+                english: 'Some of them have sought sanctuary in the church.',
+                chinese: '他们中的一些人在教堂避难。'
+            },
+            'excuse me': {
+                english: 'Excuse me. You are sitting in my seat.',
+                chinese: '对不起，你坐了我的座位。'
+            },
+            'hospital': {
+                english: 'I am going to the hospital.',
+                chinese: '我要去医院。'
+            },
+            'just': {
+                english: 'Her wedding ring fits on her finger just right.',
+                chinese: '她的婚戒戴在她手上刚刚好。'
+            },
+            'late': {
+                english: 'We went to bed very late.',
+                chinese: '我们很晚才睡。'
+            },
+            'left': {
+                english: 'In Britain cars drive on the left.',
+                chinese: '在英国，汽车靠左行驶。'
+            },
+            'museum': {
+                english: 'The museum contains the remains of Chinese antiquity.',
+                chinese: '博物馆藏有中国古代的遗物。'
+            },
+            'neighbour': {
+                english: 'I got chatting with my neighbour in the garden.',
+                chinese: '我在花园里和邻居聊了一会。'
+            },
+            'next': {
+                english: 'The next step is to put the theory into practice.',
+                chinese: '下一步是要将理论付诸实践。'
+            },
+            'next to': {
+                english: 'Canada is next to the United States.',
+                chinese: '加拿大与美国接壤。'
+            },
+            'on': {
+                english: 'All of my textbooks are on my desk.',
+                chinese: '我所有的课本都在书桌上。'
+            },
+            'opposite': {
+                english: 'He sat down in the chair opposite.',
+                chinese: '他在对面的椅子上坐了下来。'
+            },
+            'past': {
+                english: 'Now it is different from the past.',
+                chinese: '现在和过去不同了。'
+            },
+            'police station': {
+                english: 'He is detained at a police station.',
+                chinese: '他被扣在警察局里。'
+            },
+            'post office': {
+                english: 'I need to go to the post office to send this letter to my pen pal.',
+                chinese: '我要去邮局把这封信寄给我的笔友。'
+            },
+            'right': {
+                english: 'You can use green marks under right answers.',
+                chinese: '你可以在正确答案下面用绿色标记。'
+            },
+            'side': {
+                english: 'Park on the side of the road.',
+                chinese: '靠路边停车。'
+            },
+            'straight': {
+                english: 'That road is very straight.',
+                chinese: '这条路很直。'
+            },
+            'tell': {
+                english: 'Would you like to tell me what happened?',
+                chinese: '能告诉我发生了什么事吗？'
+            },
+            'tourist office': {
+                english: 'Ask the local tourist office about opening times.',
+                chinese: '请向当地旅游办事处咨询开放时间。'
+            },
+            'town': {
+                english: 'I grew up in a seaside town.',
+                chinese: '我在一个海滨小镇长大。'
+            },
+            'train station': {
+                english: 'This is a train station.',
+                chinese: '这是一个火车站。'
+            },
+            // Unit 5
+            'baby': {
+                english: 'The baby was rocked to sleep in a cradle.',
+                chinese: '婴儿在摇篮里被摇得睡着了。'
+            },
+            'badly': {
+                english: 'I was angry because I played so badly.',
+                chinese: '我很生气，因为自己的表现实在是太差了。'
+            },
+            'blood': {
+                english: 'Their blood was not shed in vain.',
+                chinese: '他们的血没有白流。'
+            },
+            'boat': {
+                english: 'Would you like to go for a boat ride?',
+                chinese: '你想去乘船吗？'
+            },
+            'Children\'s Day': {
+                english: 'It is Children\'s Day.',
+                chinese: '今天是儿童节。'
+            },
+            'city': {
+                english: 'I like the city, there is always something to do.',
+                chinese: '我喜欢城市，那里总有事情可做。'
+            },
+            'clear': {
+                english: 'The muddy water slowly cleared.',
+                chinese: '浑浊的水慢慢变得清澈起来。'
+            },
+            'close': {
+                english: 'If you are cold, close the window.',
+                chinese: '要是冷就把窗户关上。'
+            },
+            'cloudy': {
+                english: 'It is cloudy.',
+                chinese: '天气多云。'
+            },
+            'come along': {
+                english: 'Come along with me.',
+                chinese: '跟我来！'
+            },
+            'fine': {
+                english: 'I am fine. Thank you.',
+                chinese: '我很好。谢谢你。'
+            },
+            'hurt': {
+                english: 'My leg hurts.',
+                chinese: '我的腿疼。'
+            },
+            'island': {
+                english: 'The island is presently uninhabited.',
+                chinese: '这座岛目前无人居住。'
+            },
+            'jet-ski': {
+                english: 'Getting a jet ski out of you.',
+                chinese: '从你那儿弄到喷气式滑艇了。'
+            },
+            'most': {
+                english: 'Who ate the most?',
+                chinese: '谁吃得最多？'
+            },
+            'nearby': {
+                english: 'Is there a hospital nearby?',
+                chinese: '这附近有医院吗？'
+            },
+            'pass by': {
+                english: 'I see them pass by my house every day.',
+                chinese: '我每天看见他们从我家旁边经过。'
+            },
+            'rain': {
+                english: 'It is going to rain.',
+                chinese: '要下雨了。'
+            },
+            'rock': {
+                english: 'The rock is rich in mineral salts.',
+                chinese: '该岩石中富含矿盐。'
+            },
+            'sand': {
+                english: 'We went for a walk along the sand.',
+                chinese: '我们去沙滩上散了散步。'
+            },
+            'snorkel': {
+                english: 'Did you put on a snorkel before you dove?',
+                chinese: '你潜水前有没有戴上通气管？'
+            },
+            'snorkelling': {
+                english: 'We went snorkelling, and then returned for lunch.',
+                chinese: '我们去潜泳了，然后回来吃午饭。'
+            },
+            'starfish': {
+                english: 'There are starfish and seashells on the beach.',
+                chinese: '海滩上有很多海星和海贝。'
+            },
+            'sun': {
+                english: 'The sun was shining.',
+                chinese: '阳光照耀。'
+            },
+            'sunny': {
+                english: 'I love sunny.',
+                chinese: '我喜欢晴天。'
+            },
+            'too': {
+                english: 'The box is too small for him to sit in.',
+                chinese: '这个盒子太小了，它坐不下。'
+            },
+            'tourist': {
+                english: 'A tourist walked up to me to ask the way.',
+                chinese: '一位游客走过来向我问路。'
+            },
+            'windy': {
+                english: 'It is windy.',
+                chinese: '天气有风。'
+            },
+            // Unit 6
+            'adventure': {
+                english: 'I had a singular adventure.',
+                chinese: '我曾经历过一次奇特的冒险。'
+            },
+            'afraid': {
+                english: 'The little girl is intensely afraid of thunder.',
+                chinese: '这小女孩非常害怕打雷。'
+            },
+            'age': {
+                english: 'People at any age should do sports.',
+                chinese: '任何年龄的人都应该做运动。'
+            },
+            'ago': {
+                english: 'He must have started writing his book a long time ago.',
+                chinese: '他一定很久以前就开始写这本书了。'
+            },
+            'alone': {
+                english: 'He lives alone.',
+                chinese: '他独居独处。'
+            },
+            'bank': {
+                english: 'I have placed money on deposit in a bank.',
+                chinese: '我已把钱存入一家银行。'
+            },
+            'be afraid of': {
+                english: 'I used to be afraid of dark.',
+                chinese: '我过去害怕黑暗。'
+            },
+            'boot': {
+                english: 'Your boot lace is untied.',
+                chinese: '你靴子上的鞋带松了。'
+            },
+            'born to': {
+                english: 'I am born to be a miracle!',
+                chinese: '我天生就是一个奇迹！'
+            },
+            'cactus': {
+                english: 'The giant cactus is the vegetable skycraper.',
+                chinese: '高大的仙人掌是植物界巨人。'
+            },
+            'coat': {
+                english: 'She wore a thick coat to keep warm in the winter.',
+                chinese: '大冬天她穿了一件厚外套来保暖。'
+            },
+            'cowboy hat': {
+                english: 'They like to wear the famous American cowboy hat.',
+                chinese: '他们喜欢穿戴美国牛仔帽。'
+            },
+            'dark': {
+                english: 'He likes to wear a black jacket.',
+                chinese: '他喜欢穿黑色夹克。'
+            },
+            'good at': {
+                english: 'The boy is not good at figures.',
+                chinese: '这小男孩不善计算。'
+            },
+            'ground': {
+                english: 'The ground has thawed.',
+                chinese: '地面解冻了。'
+            },
+            'hero': {
+                english: 'A reporter interviewed the combat hero.',
+                chinese: '记者访问了这位战斗英雄。'
+            },
+            'horror film': {
+                english: 'A horror film full of gore.',
+                chinese: '一部充满流血场面的恐怖电影。'
+            },
+            'hot': {
+                english: 'It was a hot, humid summer day.',
+                chinese: '这是个炎热潮湿的夏日。'
+            },
+            'last': {
+                english: 'This is the last step of the game.',
+                chinese: '这是这个游戏的最后一步。'
+            },
+            'pancake': {
+                english: 'The pancake is burnt.',
+                chinese: '饼烤焦了。'
+            },
+            'proud': {
+                english: 'I was so proud.',
+                chinese: '我太骄傲了。'
+            },
+            'ride': {
+                english: 'Teach me how to ride a bicycle.',
+                chinese: '请你教我怎样骑自行车。'
+            },
+            'robber': {
+                english: 'The robber broke open the door.',
+                chinese: '盗贼把这门打开了。'
+            },
+            'sheriff': {
+                english: 'He is playing sheriff again.',
+                chinese: '他又在扮他的警长了。'
+            },
+            'short': {
+                english: 'Short hair is in style now.',
+                chinese: '短发现在很流行。'
+            },
+            'soup': {
+                english: 'Seafood soup is a good appetizer.',
+                chinese: '海鲜汤是一道很好的开胃菜。'
+            },
+            'strong': {
+                english: 'I feared I would not be able to control such a strong horse.',
+                chinese: '我怕我驾驭不了这么强壮的马。'
+            },
+            'swimmer': {
+                english: 'She wants to become an Olympic swimmer.',
+                chinese: '她想成为一名能够参加奥运会的游泳运动员。'
+            },
+            'thin': {
+                english: 'He was a tall, thin man with grey hair.',
+                chinese: '他是个瘦高个，头发灰白。'
+            },
+            'worry': {
+                english: 'Do not worry yourself about me, I can take care of myself.',
+                chinese: '你别担心我，我能照顾好自己。'
+            }
+        };
+
+        // 获取PDF文件列表
+        function getPDFFiles() {
+            // 尝试加载当前目录下的PDF文件
+            const pdfFileNames = ['5-2.pdf', '五下英语外研社Join in版单词字帖_加水印.pdf', 'wordbook.pdf', 'vocabulary.pdf', 'join-in.pdf', 'english.pdf'];
+            
+            const pdfSelect = document.getElementById('pdfSelect');
+            pdfSelect.innerHTML = '<option value="">请选择PDF文件</option>';
+            
+            // 检查每个文件是否存在
+            pdfFileNames.forEach(fileName => {
+                // 创建一个option元素
+                const option = document.createElement('option');
+                option.value = fileName;
+                option.textContent = fileName;
+                pdfSelect.appendChild(option);
+            });
+        }
+
+        // 处理PDF文件选择
+        function handlePDFSelect() {
+            const pdfSelect = document.getElementById('pdfSelect');
+            const selectedFile = pdfSelect.value;
+            
+            if (!selectedFile) {
+                updateUploadStatus('请先选择PDF文件', 'error');
+                return;
+            }
+            
+            updateUploadStatus(`正在加载PDF文件: ${selectedFile}`, 'info');
+            console.log('开始加载PDF文件:', selectedFile);
+            
+            // 使用fetch加载PDF文件
+            const pdfUrl = selectedFile;
+            
+            fetch(pdfUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('PDF文件加载失败');
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(arrayBuffer => {
+                    console.log('PDF文件加载成功:', selectedFile);
+                    updateUploadStatus(`PDF文件加载成功: ${selectedFile}`, 'success');
+                    parsePDF(arrayBuffer);
+                })
+                .catch(error => {
+                    updateUploadStatus('PDF文件加载失败: ' + error.message, 'error');
+                    console.error('PDF文件加载失败:', error);
+                });
+        }
+
+        // 自动加载PDF文件
+        function autoLoadPDF() {
+            // 尝试加载当前目录下的PDF文件
+            // 首先尝试常见的文件名，包括当前目录下存在的文件
+            const pdfFileNames = ['5-2.pdf', '五下英语外研社Join in版单词字帖_加水印.pdf', 'wordbook.pdf', 'vocabulary.pdf', 'join-in.pdf', 'english.pdf'];
+            
+            // 尝试按顺序加载PDF文件
+            function tryLoadPDF(index) {
+                if (index >= pdfFileNames.length) {
+                    updateUploadStatus('未找到PDF文件，请手动选择', 'info');
+                    console.log('所有PDF文件尝试加载失败');
+                    return;
+                }
+                
+                const pdfFileName = pdfFileNames[index];
+                updateUploadStatus(`正在尝试加载PDF文件: ${pdfFileName}`, 'info');
+                console.log('开始自动加载PDF文件:', pdfFileName);
+                
+                const pdfUrl = pdfFileName;
+                
+                // 使用fetch加载PDF文件
+                fetch(pdfUrl)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('PDF文件加载失败');
+                        }
+                        return response.arrayBuffer();
+                    })
+                    .then(arrayBuffer => {
+                        console.log('PDF文件加载成功:', pdfFileName);
+                        updateUploadStatus(`PDF文件加载成功: ${pdfFileName}`, 'success');
+                        parsePDF(arrayBuffer);
+                    })
+                    .catch(error => {
+                        console.log('加载PDF失败，尝试下一个文件:', error.message);
+                        tryLoadPDF(index + 1);
+                    });
+            }
+            
+            // 开始尝试加载PDF文件
+            tryLoadPDF(0);
+        }
 
         // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM加载完成，初始化应用');
             init();
+            getPDFFiles();
+            
+            // 自动加载PDF文件
+            autoLoadPDF();
         });
 
         // 文件上传处理
@@ -1025,10 +1789,10 @@
             currentTestIndex = 0;
             
             // 更新界面
-            updateUploadStatus('单词库已清空，请重新上传PDF文件', 'info');
+            updateUploadStatus('单词库已清空，请重新选择PDF文件', 'info');
             document.getElementById('pageSelector').style.display = 'none';
             document.getElementById('learnMode').style.display = 'none';
-            document.getElementById('pdfUpload').value = '';
+            document.getElementById('pdfSelect').value = '';
         }
 
         // 更新上传状态
@@ -1240,6 +2004,53 @@
             return '';
         }
 
+        // 分析单词的音节（改进版）
+        function analyzeSyllables(word) {
+            // 常见的元音组合
+            const vowelPatterns = /[aeiouy]+|(?:ai|ay|ea|ee|ei|ey|oa|oe|oi|oy|ou|ow|ui|uy)/gi;
+            const vowels = 'aeiouy';
+            
+            // 找到所有的元音和元音组合
+            const vowelMatches = word.match(vowelPatterns) || [];
+            const syllables = [];
+            let lastIndex = 0;
+            
+            for (let i = 0; i < vowelMatches.length; i++) {
+                const match = vowelMatches[i];
+                const matchIndex = word.indexOf(match, lastIndex);
+                
+                // 确定音节的结束位置
+                let endIndex = matchIndex + match.length;
+                
+                // 处理辅音
+                if (i < vowelMatches.length - 1) {
+                    const nextVowelIndex = word.indexOf(vowelMatches[i+1], endIndex);
+                    const consonantsBetween = word.substring(endIndex, nextVowelIndex);
+                    
+                    if (consonantsBetween.length === 1) {
+                        // 单个辅音，归属于下一音节
+                        endIndex = endIndex;
+                    } else if (consonantsBetween.length >= 2) {
+                        // 两个或更多辅音，通常前一半归属于当前音节
+                        const splitPoint = Math.floor(consonantsBetween.length / 2);
+                        endIndex = endIndex + splitPoint;
+                    }
+                }
+                
+                // 提取音节
+                const syllable = word.substring(lastIndex, endIndex);
+                syllables.push(syllable);
+                lastIndex = endIndex;
+            }
+            
+            // 处理剩余的字符
+            if (lastIndex < word.length) {
+                syllables[syllables.length - 1] += word.substring(lastIndex);
+            }
+            
+            return syllables;
+        }
+
         // 更新单词显示
         async function updateWordDisplay() {
             const currentWords = wordLibrary.currentWords;
@@ -1247,6 +2058,9 @@
                 document.getElementById('currentWord').textContent = '请先上传PDF文件';
                 document.getElementById('currentPhonetic').textContent = '';
                 document.getElementById('currentMeaning').textContent = '';
+                document.getElementById('sentenceEnglish').textContent = '';
+                document.getElementById('sentenceChinese').textContent = '';
+                document.getElementById('exampleSentence').style.display = 'none';
                 document.getElementById('progressText').textContent = '单词 0/0';
                 document.getElementById('prevBtn').disabled = true;
                 document.getElementById('nextBtn').disabled = true;
@@ -1254,9 +2068,44 @@
             }
             
             const word = currentWords[currentWordIndex];
-            document.getElementById('currentWord').textContent = word.english;
+            
+            // 分析单词的音节
+            const syllables = analyzeSyllables(word.english);
+            console.log('单词音节分析:', syllables);
+            
+            // 显示单词，按照音节划分并添加颜色
+            const wordElement = document.getElementById('currentWord');
+            if (syllables.length > 1) {
+                // 定义颜色数组
+                const colors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b'];
+                let coloredWord = '';
+                
+                // 为每个音节添加颜色
+                for (let i = 0; i < syllables.length; i++) {
+                    const color = colors[i % colors.length];
+                    coloredWord += `<span style="color: ${color}; font-weight: bold;">${syllables[i]}</span>`;
+                }
+                
+                wordElement.innerHTML = coloredWord;
+            } else {
+                wordElement.textContent = word.english;
+            }
+            
             document.getElementById('currentMeaning').textContent = word.chinese;
             document.getElementById('progressText').textContent = `单词 ${currentWordIndex + 1}/${currentWords.length}`;
+            
+            // 显示例句
+            const exampleSentence = exampleSentences[word.english];
+            if (exampleSentence) {
+                document.getElementById('sentenceEnglish').textContent = exampleSentence.english;
+                document.getElementById('sentenceChinese').textContent = exampleSentence.chinese;
+                document.getElementById('exampleSentence').style.display = 'block';
+            } else {
+                // 如果没有找到例句，显示默认提示
+                document.getElementById('sentenceEnglish').textContent = '暂无例句';
+                document.getElementById('sentenceChinese').textContent = '';
+                document.getElementById('exampleSentence').style.display = 'block';
+            }
             
             // 查询并显示音标
             try {
@@ -1303,7 +2152,7 @@
             
             console.log('准备播放单词:', word.english);
             speakWord(word.english);
-            document.getElementById('feedback').textContent = "正在播放发音...";
+            document.getElementById('feedback').textContent = "点击麦克风开始跟读单词";
             document.getElementById('voiceStatus').textContent = "正在播放发音...";
         }
 
@@ -1397,9 +2246,14 @@
                     recognition.lang = 'en-US';
                     recognition.interimResults = false;
                     recognition.maxAlternatives = 1;
+                    // 增加超时时间到10秒
+                    recognition.timeout = 10000;
+                    // 允许连续识别
+                    recognition.continuous = false;
                     
                     recognition.onresult = (event) => {
                         const transcript = event.results[0].transcript;
+                        console.log('语音识别结果:', transcript);
                         evaluatePronunciation(transcript);
                     };
                     
@@ -1410,17 +2264,22 @@
                         // 提供更详细的错误信息
                         switch (event.error) {
                             case 'no-speech':
-                                errorMessage = "未检测到语音，请重试";
+                                errorMessage = "未检测到语音，请重试\n\n提示：请靠近麦克风，清晰地说出单词";
                                 break;
                             case 'audio-capture':
-                                errorMessage = "无法访问麦克风，请检查权限设置";
+                                errorMessage = "无法访问麦克风，请检查权限设置\n\n提示：在浏览器地址栏右侧点击锁图标，允许网站使用麦克风";
                                 break;
                             case 'not-allowed':
-                                errorMessage = "麦克风权限被拒绝，请在浏览器设置中允许访问";
+                                errorMessage = "麦克风权限被拒绝，请在浏览器设置中允许访问\n\n提示：进入浏览器设置 > 隐私和安全 > 网站设置 > 麦克风，允许本网站使用麦克风";
                                 break;
                             case 'aborted':
                                 errorMessage = "语音识别被中止";
                                 break;
+                            case 'network':
+                                errorMessage = "网络错误，请检查网络连接后重试";
+                                break;
+                            default:
+                                errorMessage = "语音识别错误: " + event.error + "，请重试";
                         }
                         
                         document.getElementById('voiceStatus').textContent = errorMessage;
@@ -1432,10 +2291,10 @@
                     };
                     
                     console.log('语音识别初始化成功');
-                    document.getElementById('voiceStatus').textContent = '语音功能准备就绪';
+                    document.getElementById('voiceStatus').textContent = '语音功能准备就绪\n\n使用提示：点击麦克风后，请清晰地说出单词';
                 } catch (error) {
                     console.error('语音识别初始化失败:', error);
-                    document.getElementById('voiceStatus').textContent = "语音识别初始化失败，请检查浏览器设置";
+                    document.getElementById('voiceStatus').textContent = "语音识别初始化失败，请检查浏览器设置\n\n建议：使用Chrome或Edge浏览器，并确保麦克风权限已开启";
                 }
             } else {
                 console.log('浏览器不支持语音识别功能');
@@ -1481,7 +2340,20 @@
                 return;
             }
             
-            const correctWord = currentWords[currentWordIndex].english.toLowerCase();
+            // 检查currentWordIndex是否有效
+            if (currentWordIndex < 0 || currentWordIndex >= currentWords.length) {
+                document.getElementById('feedback').textContent = "单词索引无效";
+                return;
+            }
+            
+            // 检查单词数据是否有效
+            const word = currentWords[currentWordIndex];
+            if (!word || !word.english) {
+                document.getElementById('feedback').textContent = "单词数据无效";
+                return;
+            }
+            
+            const correctWord = word.english.toLowerCase();
             const spokenWord = spokenText.toLowerCase();
             
             let score = 0;
@@ -1563,13 +2435,9 @@
             const questionElement = document.getElementById('testQuestion');
             const inputElement = document.getElementById('answerInput');
             
-            if (testType === 'enToCn') {
-                questionElement.textContent = `单词 "${word.english}" 的中文意思是？`;
-                inputElement.placeholder = "请输入中文意思...";
-            } else {
-                questionElement.textContent = `中文 "${word.chinese}" 对应的英文单词是？`;
-                inputElement.placeholder = "请输入英文单词...";
-            }
+            // 只显示汉译英的问题
+            questionElement.textContent = `中文 "${word.chinese}" 对应的英文单词是？`;
+            inputElement.placeholder = "请输入英文单词...";
             
             document.getElementById('testProgress').textContent = `题目 ${currentTestIndex + 1}/${currentWords.length}`;
             document.getElementById('testResult').style.display = 'none';
@@ -1611,14 +2479,17 @@
             const word = currentWords[currentTestIndex];
             const resultElement = document.getElementById('testResult');
             
-            let isCorrect = false;
-            
-            if (testType === 'enToCn') {
-                isCorrect = userAnswer.includes(word.chinese.split('.')[1]) || 
-                           word.chinese.includes(userAnswer);
-            } else {
-                isCorrect = userAnswer.toLowerCase() === word.english.toLowerCase();
+            // 检查答案是否为空
+            if (!userAnswer) {
+                resultElement.textContent = "✗ 错误！答案不能为空";
+                resultElement.className = 'result wrong';
+                speakWord("Try again!");
+                resultElement.style.display = 'block';
+                return;
             }
+            
+            // 只验证英文单词（汉译英）
+            const isCorrect = userAnswer.toLowerCase() === word.english.toLowerCase();
             
             if (isCorrect) {
                 resultElement.textContent = `✓ 正确！${word.english} - ${word.chinese}`;
@@ -1655,7 +2526,6 @@
             
             if (currentTestIndex < currentWords.length - 1) {
                 currentTestIndex++;
-                testType = Math.random() > 0.5 ? 'enToCn' : 'cnToEn';
                 updateTestDisplay();
             }
         }
