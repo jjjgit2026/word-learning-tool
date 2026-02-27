@@ -348,73 +348,42 @@
     </div>
 
     <script>
-        // 单词数据（从文档中提取）
+        // 单词数据
         const wordData = [
-            // Unit 1
             { english: "alphabet", phonetic: "/ˈælfəbet/", chinese: "n.字母表" },
             { english: "enjoy", phonetic: "/ɪnˈdʒɔɪ/", chinese: "v.享受……的乐趣" },
             { english: "everyone", phonetic: "/ˈevriwʌn/", chinese: "pron.每个人" },
             { english: "fun", phonetic: "/fʌn/", chinese: "n.乐趣" },
-            { english: "hey", phonetic: "/heɪ/", chinese: "int.嘿，喂" },
-            { english: "near", phonetic: "/nɪə(r)/", chinese: "adj.接近（地）" },
-            { english: "notebook", phonetic: "/ˈnəʊtbʊk/", chinese: "n.笔记本" },
-            { english: "ping-pong", phonetic: "/ˈpɪŋ pɒŋ/", chinese: "n.乒乓球" },
-            { english: "school", phonetic: "/skuːl/", chinese: "n.[在学校里]上课" },
-            { english: "shake hands", phonetic: "/ʃeɪk hændz/", chinese: "握手" },
-            { english: "until", phonetic: "/ənˈtɪl/", chinese: "conj./prep.直到……为止" },
-            
-            // Unit 2
-            { english: "ask", phonetic: "/ɑːsk/", chinese: "v.问" },
-            { english: "before", phonetic: "/bɪˈfɔː(r)/", chinese: "prep.在……以前" },
-            { english: "busy", phonetic: "/ˈbɪzi/", chinese: "adj.忙碌的" },
-            { english: "call", phonetic: "/kɔːl/", chinese: "v.（一次）通话" },
-            { english: "CD-ROM", phonetic: "/ˌsiː diː ˈrɒm/", chinese: "n.只读光盘" },
-            { english: "do shopping", phonetic: "/duː ˈʃɒpɪŋ/", chinese: "购物" },
-            { english: "excited", phonetic: "/ɪkˈsaɪtɪd/", chinese: "adj.兴奋的" },
-            { english: "get", phonetic: "/ɡet/", chinese: "v.收到，接到" },
-            { english: "important", phonetic: "/ɪmˈpɔːtnt/", chinese: "adj.重要的" },
-            { english: "mobile phone", phonetic: "/ˌməʊbaɪl ˈfəʊn/", chinese: "n.移动电话，手机" },
-            
-            // Unit 3
-            { english: "moment", phonetic: "/ˈməʊmənt/", chinese: "n.片刻" },
-            { english: "over there", phonetic: "/ˌəʊvə ˈðeə(r)/", chinese: "在那边，在那儿" },
-            { english: "phone box", phonetic: "/ˈfəʊn bɒks/", chinese: "n.电话亭" },
-            { english: "phone call", phonetic: "/ˈfəʊn kɔːl/", chinese: "n.电话" },
-            { english: "programme", phonetic: "/ˈprəʊɡræm/", chinese: "n.[电视或广播的]节目" },
-            { english: "see you tomorrow", phonetic: "/siː juː təˈmɒrəʊ/", chinese: "明天见" },
-            { english: "something", phonetic: "/ˈsʌmθɪŋ/", chinese: "pron.某物，某事" },
-            { english: "squirrel", phonetic: "/ˈskwɪrəl/", chinese: "n.松鼠" },
-            { english: "storybook", phonetic: "/ˈstɔːribʊk/", chinese: "n.故事书" },
-            { english: "wait a moment", phonetic: "/weɪt ə ˈməʊmənt/", chinese: "等一下" },
-            
-            // 更多单词...（实际使用时可以添加所有单词）
+            { english: "hey", phonetic: "/heɪ/", chinese: "int.嘿，喂" }
         ];
 
-        // 学习模式状态
+        // 全局变量
         let currentMode = 'learn';
         let currentWordIndex = 0;
         let currentTestIndex = 0;
-        let testType = 'enToCn'; // 'enToCn' 或 'cnToEn'
+        let testType = 'enToCn';
         let isRecording = false;
         let recognition = null;
 
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM加载完成，初始化应用');
+            init();
+        });
+
         // 初始化
         function init() {
-            // 初始化单元选择器
             initUnitSelector();
-            
-            // 初始化语音识别（如果浏览器支持）
             initSpeechRecognition();
-            
-            // 显示第一个单词
             updateWordDisplay();
             updateTestDisplay();
+            console.log('应用初始化完成');
         }
 
         // 初始化单元选择器
         function initUnitSelector() {
             const unitSelector = document.getElementById('unitSelector');
-            const units = 14; // 根据文档有14个单元
+            const units = 14;
             
             for (let i = 1; i <= units; i++) {
                 const btn = document.createElement('button');
@@ -427,12 +396,10 @@
 
         // 选择单元
         function selectUnit(unit) {
-            // 更新激活状态
             document.querySelectorAll('.unit-btn').forEach((btn, index) => {
                 btn.classList.toggle('active', index + 1 === unit);
             });
             
-            // 这里可以按单元筛选单词，简化实现先显示所有单词
             currentWordIndex = 0;
             currentTestIndex = 0;
             updateWordDisplay();
@@ -443,17 +410,14 @@
         function switchMode(mode) {
             currentMode = mode;
             
-            // 更新按钮状态
             document.querySelectorAll('.mode-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.textContent.includes(mode === 'learn' ? '学习' : '测试'));
             });
             
-            // 显示/隐藏对应内容
             document.getElementById('learnMode').style.display = mode === 'learn' ? 'block' : 'none';
             document.getElementById('testMode').style.display = mode === 'test' ? 'block' : 'none';
             
             if (mode === 'test') {
-                // 随机选择测试类型
                 testType = Math.random() > 0.5 ? 'enToCn' : 'cnToEn';
                 updateTestDisplay();
             }
@@ -467,7 +431,6 @@
             document.getElementById('currentMeaning').textContent = word.chinese;
             document.getElementById('progressText').textContent = `单词 ${currentWordIndex + 1}/${wordData.length}`;
             
-            // 更新按钮状态
             document.getElementById('prevBtn').disabled = currentWordIndex === 0;
             document.getElementById('nextBtn').disabled = currentWordIndex === wordData.length - 1;
         }
@@ -484,7 +447,7 @@
             if ('speechSynthesis' in window) {
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = 'en-US';
-                utterance.rate = 0.8; // 稍慢的语速
+                utterance.rate = 0.8;
                 speechSynthesis.speak(utterance);
             } else {
                 alert("您的浏览器不支持语音合成功能");
@@ -562,7 +525,6 @@
             let score = 0;
             let feedback = "";
             
-            // 简单的评分逻辑（实际应用中应该更复杂）
             if (spokenWord === correctWord) {
                 score = 5;
                 feedback = "太棒了！发音非常标准！";
@@ -577,7 +539,6 @@
                 feedback = "加油！点击喇叭再听一次标准发音";
             }
             
-            // 显示评分
             displayScore(score, feedback);
         }
 
@@ -587,7 +548,6 @@
             stars.textContent = "★".repeat(score) + "☆".repeat(5 - score);
             document.getElementById('feedback').textContent = feedback;
             
-            // 播放鼓励语音
             if (score >= 4) {
                 speakWord("Excellent!");
             } else if (score >= 3) {
@@ -613,7 +573,7 @@
             }
         }
 
-        // 测试模式功能
+        // 更新测试显示
         function updateTestDisplay() {
             const word = wordData[currentTestIndex];
             const questionElement = document.getElementById('testQuestion');
@@ -631,7 +591,6 @@
             document.getElementById('testResult').style.display = 'none';
             inputElement.value = '';
             
-            // 更新按钮状态
             document.getElementById('prevTestBtn').disabled = currentTestIndex === 0;
             document.getElementById('nextTestBtn').disabled = currentTestIndex === wordData.length - 1;
         }
@@ -663,11 +622,9 @@
             let isCorrect = false;
             
             if (testType === 'enToCn') {
-                // 检查中文意思（允许一定的灵活性）
-                isCorrect = userAnswer.includes(word.chinese.split('.')[1](@ref) || 
+                isCorrect = userAnswer.includes(word.chinese.split('.')[1]) || 
                            word.chinese.includes(userAnswer);
             } else {
-                // 检查英文单词（不区分大小写）
                 isCorrect = userAnswer.toLowerCase() === word.english.toLowerCase();
             }
             
@@ -696,14 +653,10 @@
         function nextTest() {
             if (currentTestIndex < wordData.length - 1) {
                 currentTestIndex++;
-                // 随机切换测试类型
                 testType = Math.random() > 0.5 ? 'enToCn' : 'cnToEn';
                 updateTestDisplay();
             }
         }
-
-        // 页面加载完成后初始化
-        window.onload = init;
     </script>
 </body>
 </html>
