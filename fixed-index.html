@@ -1514,19 +1514,30 @@
                             phrase = firstWord;
                             console.log('找到重复的单个单词:', phrase);
                         } else if (englishWords.length > 1) {
-                            // 检查是否是两词词组重复的模式
-                            const secondWord = englishWords[1];
+                            // 尝试检测多词词组重复的模式
+                            let phraseLength = 1;
+                            let foundRepeat = false;
                             
-                            if (englishWords.length >= 4 && 
-                                englishWords[2] === firstWord && 
-                                englishWords[3] === secondWord) {
-                                // 提取重复的两词词组
-                                phrase = `${firstWord} ${secondWord}`;
-                                console.log('找到重复的两词词组:', phrase);
-                            } else {
-                                // 否则取前两个单词作为词组
-                                phrase = englishWords.slice(0, 2).join(' ');
-                                console.log('找到两词词组:', phrase);
+                            // 尝试不同长度的词组
+                            for (let len = 2; len <= 5; len++) { // 支持最多5个单词的词组
+                                if (englishWords.length >= len * 2) {
+                                    const potentialPhrase = englishWords.slice(0, len).join(' ');
+                                    const nextPhrase = englishWords.slice(len, len * 2).join(' ');
+                                    
+                                    if (potentialPhrase === nextPhrase) {
+                                        phrase = potentialPhrase;
+                                        foundRepeat = true;
+                                        console.log(`找到重复的${len}词词组:`, phrase);
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            if (!foundRepeat) {
+                                // 如果没有找到重复模式，尝试识别完整的词组
+                                // 对于像"see you tomorrow"这样的词组，尝试使用整个英文单词列表
+                                phrase = englishWords.join(' ');
+                                console.log('找到多词词组:', phrase);
                             }
                         } else {
                             // 单个单词
