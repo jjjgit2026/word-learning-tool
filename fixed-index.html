@@ -109,6 +109,29 @@
             font-size: 14px;
             color: #999;
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .sentence-play-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .sentence-play-btn:hover {
+            background: #5a6fd8;
+            transform: scale(1.1);
         }
         
         .sentence-english {
@@ -450,7 +473,7 @@
     <div class="container">
         <div class="header">
             <h1>英语单词学习</h1>
-            <p>外研社Join in版字帖</p>
+            <p>根据外研社Join in版字帖生成</p>
             <div class="mode-selector">
                 <button class="mode-btn active" onclick="switchMode('learn')">学习模式</button>
                 <button class="mode-btn" onclick="switchMode('test')">测试模式</button>
@@ -488,7 +511,10 @@
                     </div>
                     
                     <div class="example-sentence" id="exampleSentence">
-                        <div class="sentence-label">例句：</div>
+                        <div class="sentence-label">
+                            例句：
+                            <button class="sentence-play-btn" onclick="playSentence()">🔊</button>
+                        </div>
                         <div class="sentence-english" id="sentenceEnglish">It gave me sounds and the alphabet.</div>
                         <div class="sentence-chinese" id="sentenceChinese">她教我发声和认识字母表。</div>
                     </div>
@@ -550,6 +576,7 @@
         let testType = 'cnToEn';
         let isRecording = false;
         let recognition = null;
+        let currentPDFFile = '';
 
         // 例句数据库 - 外研社Join In版五年级下册
         const exampleSentences = {
@@ -1172,13 +1199,13 @@
 
         // 获取PDF文件列表
         function getPDFFiles() {
-            // 尝试加载当前目录下的PDF文件
-            const pdfFileNames = ['5-2.pdf', '五下英语外研社Join in版单词字帖_加水印.pdf', 'wordbook.pdf', 'vocabulary.pdf', 'join-in.pdf', 'english.pdf'];
+            // 只显示当前目录中已知存在的PDF文件
+            const pdfFileNames = ['5-2.pdf'];
             
             const pdfSelect = document.getElementById('pdfSelect');
             pdfSelect.innerHTML = '<option value="">请选择PDF文件</option>';
             
-            // 检查每个文件是否存在
+            // 添加已知存在的PDF文件选项
             pdfFileNames.forEach(fileName => {
                 // 创建一个option元素
                 const option = document.createElement('option');
@@ -1197,6 +1224,9 @@
                 updateUploadStatus('请先选择PDF文件', 'error');
                 return;
             }
+            
+            // 保存当前PDF文件名
+            currentPDFFile = selectedFile;
             
             updateUploadStatus(`正在加载PDF文件: ${selectedFile}`, 'info');
             console.log('开始加载PDF文件:', selectedFile);
@@ -1224,9 +1254,8 @@
 
         // 自动加载PDF文件
         function autoLoadPDF() {
-            // 尝试加载当前目录下的PDF文件
-            // 首先尝试常见的文件名，包括当前目录下存在的文件
-            const pdfFileNames = ['5-2.pdf', '五下英语外研社Join in版单词字帖_加水印.pdf', 'wordbook.pdf', 'vocabulary.pdf', 'join-in.pdf', 'english.pdf'];
+            // 只尝试加载当前目录中已知存在的PDF文件
+            const pdfFileNames = ['5-2.pdf'];
             
             // 尝试按顺序加载PDF文件
             function tryLoadPDF(index) {
@@ -1251,6 +1280,8 @@
                         return response.arrayBuffer();
                     })
                     .then(arrayBuffer => {
+                        // 保存当前PDF文件名
+                        currentPDFFile = pdfFileName;
                         console.log('PDF文件加载成功:', pdfFileName);
                         updateUploadStatus(`PDF文件加载成功: ${pdfFileName}`, 'success');
                         parsePDF(arrayBuffer);
@@ -1669,12 +1700,24 @@
             // 去重处理
             wordLibrary.uniqueWords = removeDuplicateWords(wordLibrary.originalWords);
             
+            // 解析PDF文件名，获取年级信息
+            let gradeInfo = '';
+            if (currentPDFFile) {
+                const match = currentPDFFile.match(/^(\d)-(\d)\.pdf$/);
+                if (match) {
+                    const grade = match[1];
+                    const semester = match[2];
+                    const semesterText = semester === '1' ? '上册' : '下册';
+                    gradeInfo = `当前为外研社Join in版${grade}年级${semesterText}单词\n`;
+                }
+            }
+            
             // 更新上传状态
             const totalWords = wordLibrary.originalWords.length;
             const uniqueCount = wordLibrary.uniqueWords.length;
             const duplicateCount = totalWords - uniqueCount;
             
-            updateUploadStatus(`单词库构建完成\n总单词数: ${totalWords}\n去重后: ${uniqueCount}\n重复单词: ${duplicateCount}`, 'success');
+            updateUploadStatus(`${gradeInfo}单词库构建完成\n总单词数: ${totalWords}\n去重后: ${uniqueCount}\n重复单词: ${duplicateCount}`, 'success');
             console.log('单词库构建完成:', {
                 totalWords,
                 uniqueCount,
@@ -2233,6 +2276,29 @@
         // 重复单词
         function repeatWord() {
             playPronunciation();
+        }
+        
+        // 播放例句
+        function playSentence() {
+            const sentenceElement = document.getElementById('sentenceEnglish');
+            const sentence = sentenceElement.textContent;
+            
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(sentence);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.8;
+                speechSynthesis.speak(utterance);
+                
+                // 更新状态显示
+                document.getElementById('voiceStatus').textContent = "正在播放例句...";
+                
+                // 播放完成后更新状态
+                utterance.onend = function() {
+                    document.getElementById('voiceStatus').textContent = "语音功能准备就绪";
+                };
+            } else {
+                document.getElementById('voiceStatus').textContent = "您的浏览器不支持语音合成功能";
+            }
         }
 
         // 初始化语音识别
